@@ -1,0 +1,396 @@
+<?
+
+session_start();
+$codigo_usuario= $global[2];
+
+
+function paginar($sql) {
+	$db= new  Database();
+	$db->query($sql);
+return  $db->num_rows();
+}
+
+
+function reemplazar($busquedas) {
+	$busquedas=str_replace(" like '%","|",$busquedas);
+$busquedas=str_replace("%'","",$busquedas);
+return $busquedas;
+}
+
+
+function reemplazar_1($busquedas) {
+	$busquedas=str_replace("|"," like '%",$busquedas);
+$busquedas=$busquedas."%'";
+return $busquedas;
+}
+
+
+function combo($nombre_obj,$tabla,$valor,$nombre,$valor_edicion) 
+{
+$db= new  Database();
+$sql="select * from ".$tabla;
+$db->query($sql);
+echo " <select name='".$nombre_obj."' class='SELECT'>";
+while($db->next_row()) {
+	if($valor_edicion==$db->$valor) 
+		echo" <option value=".$db->$valor." selected='selected'>".$db->$nombre."</option>";
+	else
+		 echo" <option value=".$db->$valor.">".$db->$nombre."</option>";
+}
+echo "</select>";
+$db->close();
+}
+
+
+function combo_almacen($nombre_obj,$valor,$nombre,$valor_edicion,$proyecto) {
+	$db= new  Database();
+$sql="select * from  almacen where  cod_pro_alm=".$proyecto;
+$db->query($sql);
+echo " <select name='".$nombre_obj."' class='SELECT'>";
+while($db->next_row()) {
+	if($valor_edicion==$db->$valor) 
+		echo" <option value=".$db->$valor." selected='selected'>".$db->$nombre."</option>";
+	else
+		 echo" <option value=".$db->$valor.">".$db->$nombre."</option>";
+}
+echo "</select>";
+$db->close();
+}
+
+
+function combo11($nombre_obj,$tabla,$valor,$nombre,$valor_edicion) {
+	$db= new  Database();
+$sql="select * from ".$tabla;
+$db->query($sql);
+echo " <select name='".$nombre_obj."' class='SELECT01'>";
+while($db->next_row()) {
+	if($valor_edicion==$db->$valor) 
+		echo" <option value=".$db->$valor." selected='selected'>".$db->$nombre."</option>";
+	else
+		 echo" <option value=".$db->$valor.">".$db->$nombre."</option>";
+}
+echo "</select>";
+$db->close();
+}
+
+
+function combo_evento($nombre_obj,$tabla,$valor,$nombre,$valor_edicion,$evento, $orden) 
+	{
+$db= new  Database();
+$sql="select ".$valor.", ".$nombre." as nombre  from ".$tabla. " order by ".$orden;
+$db->query($sql);
+echo " <select name='".$nombre_obj."' id='".$nombre_obj."' class='SELECT'  $evento  >";
+echo "<option value='0' selected='selected'>Seleccione..</option>";
+while($db->next_row()) {
+	if($valor_edicion==$db->$valor) 
+		echo" <option value=".$db->$valor." selected='selected'>".$db->nombre."</option>";
+	else
+		 echo" <option value=".$db->$valor.">".$db->nombre."</option>";
+}
+echo "</select>";
+$db->close();
+}
+
+
+function combo_polar($nombre_obj,$valor_edicion) {
+	echo " <select name='".$nombre_obj."' class='SELECT'>";
+	if($valor_edicion=="POSITIVO") 
+		echo "<option value='POSITIVO' selected='selected'>POSITIVO</option>";
+	else
+		echo "<option value='POSITIVO'>POSITIVO</option>";
+	if($valor_edicion=="NEGATIVO") 
+		echo "<option value='NEGATIVO' selected='selected'>NEGATIVO</option>";	
+	else
+		echo "<option value='NEGATIVO'>NEGATIVO</option>";	
+	if($valor_edicion=="NEUTRO") 
+		echo "<option value='NEUTRO' selected='selected'>NEUTRO</option>";	
+	else
+		echo "<option value='NEUTRO'>NEUTRO</option>";	
+	echo "</select>";
+	}
+
+
+function inicio() {
+	echo '<script type="text/javascript" src="calendario/javascript/calendar.js"></script>
+	<script type="text/javascript" src="calendario/javascript/calendar-es.js"></script>
+	<script type="text/javascript" src="calendario/javascript/calendar-setup.js"></script>
+	<link rel="stylesheet" type="text/css" media="all" href="calendario/styles/calendar-win2k-cold-1.css" title="win2k-cold-1" />
+	<link href="css/styles.css" rel="stylesheet" type="text/css" /> 
+	<script type="text/javascript" src="js/funciones.js"></script> ';
+}
+
+
+function insertar($tabla,$compos,$valores) {
+	$sql="insert into $tabla $compos values $valores ";
+	//exit;
+	$db= new  Database();
+	$db->query($sql);
+	$retorno= $db->affected_rows();
+	$db->close();
+	auditoria ($tabla,1);
+	return $retorno;
+}
+
+
+function editar($tabla,$compos,$where_campo, $where_valor) {
+	$sql="UPDATE  $tabla  set $compos where $where_campo=$where_valor ";
+	$db= new  Database();
+	$db->query($sql);
+	$retorno= $db->Errno;
+	if ($retorno==0)
+		$retorno=1;
+	$db->close();
+	auditoria ($tabla,2);
+	return $retorno;
+}
+
+
+function eliminar($tabla, $codigo, $campo) {
+	$sql="DELETE FROM $tabla WHERE $campo=$codigo ";
+	$db= new  Database();
+	$db->query($sql);
+	$retorno= $db->affected_rows();
+	$db->close();
+	auditoria ($tabla,3);
+	return $retorno;
+}
+
+
+function auditoria ($tabla, $codigo) {
+	$codigo_usuario=$_SESSION["global"][2];
+	$codigo_proyecto=1;
+	$fecha= date("Y-m-d H:i:s");
+	$sql="INSERT INTO auditoria VALUES (NULL,$codigo_usuario,'$tabla','$fecha',$codigo,$codigo_proyecto) ";
+	$db= new  Database();
+	$db->query($sql);
+}
+
+
+function resumen_movimiento($codido_documento,$tipo_movimineto,$fecha,$vendedor,$valor,$deb_ced,$transaccion){
+
+$sql="DELETE FROM resumen_movimineto  WHERE tipo_mov_rmov=$tipo_movimineto and cod_doc_rmov=$codido_documento ";
+$db= new  Database();
+$db->query($sql);
+
+}
+
+
+function completar($codigo,$tam) {
+	$a=strlen($codigo);
+for ($i=$a ; $i<$tam; $i++) {
+	$codigo="0".$codigo;
+}
+return  $codigo;
+}
+
+
+function insertar_maestro($tabla,$compos,$valores) {
+	$sql="insert into $tabla $compos values $valores ";
+	$db= new  Database();
+	$db->query($sql);
+	$retorno= $db->insert_id();
+	$db->close();
+	auditoria ($tabla,1);
+	return $retorno;
+}
+
+
+function combo_ref($nombre_obj,$tabla,$valor,$nombre,$valor_edicion) {
+	$db= new  Database();
+$sql="select * from ".$tabla;
+$db->query($sql);
+echo " <select name='".$nombre_obj."' class='SELECT01' onchange=\"cargar('0','$nombre_obj','0')\">";
+echo" <option value=0>Seleccione</option>";
+while($db->next_row()) {
+	if($valor_edicion==$db->$valor) 
+		echo" <option value=".$db->$valor." selected='selected'>".$db->$nombre."</option>";
+	else
+		 echo" <option value=".$db->$valor.">".$db->$nombre."</option>";
+}
+echo "</select>";
+$db->close();
+}
+
+
+function actual_insertar($referencia,$cantidad){
+$sql=" SELECT act_ref + ".$cantidad."  as total FROM referencia WHERE  cod_ref=$referencia ";
+$db= new  Database();
+$db->query($sql);
+$db->next_row();
+$cant_actual=$db->total;
+//$cant_actual=$db->argumento($sql,"total");
+$sql = "UPDATE referencia SET act_ref=".$cant_actual." WHERE  cod_ref=".$referencia ;
+$db->query($sql);
+}
+
+
+function actual_insertar_debitar($referencia,$cantidad){
+$sql=" SELECT act_ref - ".$cantidad."  as total FROM referencia WHERE  cod_ref=$referencia ";
+$db= new  Database();
+$db->query($sql);
+$db->next_row();
+$cant_actual=$db->total;
+//$cant_actual=$db->argumento($sql,"total");
+$sql = "UPDATE referencia SET act_ref=".$cant_actual." WHERE  cod_ref=".$referencia ;
+$db->query($sql);
+}
+
+
+function reverzar_referencias_compras ($movimineto) {
+	$sql =" SELECT cod_ref_mae, cant_mae FROM maestro_movimiento  WHERE cod_mov_mae=$movimineto and cod_tip_mae=2";
+	$dbdatos= new  Database();	
+	$dbdatos->query($sql);
+	$dbcos= new  Database();
+	$dbcos1= new  Database();
+	while($dbdatos->next_row())
+	{	
+		$sql_revertido = " SELECT act_ref -".$dbdatos->cant_mae." as total FROM referencia WHERE cod_ref=".$dbdatos->cod_ref_mae;
+		$dbcos= new  Database();
+		$dbcos->query($sql_revertido);
+		$dbcos->next_row();
+		$cant_actual=$dbcos->total;
+		$dbcos1->query($sql);
+		$sql = "UPDATE referencia SET act_ref=".$cant_actual." WHERE  cod_ref=".$dbdatos->cod_ref_mae ;
+		$dbcos1->query($sql);	
+	}
+	$dbcos1->query($sql);
+	$sql = "delete from maestro_movimiento WHERE cod_mov_mae=$movimineto  and cod_tip_mae=2" ;
+	$dbcos1->query($sql);
+}
+
+
+function reverzar_referencias_salidas ($movimineto) {
+	$sql =" SELECT cod_ref_mae, cant_mae * -1 as cant_mae FROM maestro_movimiento  WHERE cod_mov_mae=$movimineto and cod_tip_mae=7";
+	$dbdatos= new  Database();	
+	$dbdatos->query($sql);
+	$dbcos= new  Database();
+	$dbcos1= new  Database();
+	while($dbdatos->next_row())
+	{	
+		$sql_revertido = " SELECT act_ref +".$dbdatos->cant_mae." as total FROM referencia WHERE cod_ref=".$dbdatos->cod_ref_mae;
+		$dbcos= new  Database();
+		$dbcos->query($sql_revertido);
+		$dbcos->next_row();
+		$cant_actual=$dbcos->total;
+		$dbcos1->query($sql);
+		$sql = "UPDATE referencia SET act_ref=".$cant_actual." WHERE  cod_ref=".$dbdatos->cod_ref_mae ;
+		$dbcos1->query($sql);	
+	}
+	$dbcos1->query($sql);
+	$sql = "delete from maestro_movimiento WHERE cod_mov_mae=$movimineto  and cod_tip_mae=7" ;
+	$dbcos1->query($sql);
+	
+	//BORROA MAESTRO SERIALES
+	$sql = "delete from maestro_serial WHERE cod_mov_ser=$movimineto and tip_mov_ser=7 " ;
+	$dbcos1->query($sql);
+}
+
+
+
+function reverzar_referencias_ingresos ($movimineto) {
+	$sql =" SELECT cod_ref_mae, cant_mae FROM maestro_movimiento  WHERE cod_mov_mae=$movimineto and cod_tip_mae=3";
+	$dbdatos= new  Database();	
+	$dbdatos->query($sql);
+	$dbcos= new  Database();
+	$dbcos1= new  Database();
+	while($dbdatos->next_row())
+	{	
+		$sql_revertido = " SELECT act_ref -".$dbdatos->cant_mae." as total FROM referencia WHERE cod_ref=".$dbdatos->cod_ref_mae;
+		$dbcos->query($sql_revertido);
+		$dbcos->next_row();
+		$cant_actual=$dbcos->total;
+		$sql = "UPDATE referencia SET act_ref=".$cant_actual." WHERE  cod_ref=".$dbdatos->cod_ref_mae ;
+		$dbcos1->query($sql);	
+	}
+	$dbcos1->query($sql);
+	$sql = "delete from maestro_movimiento WHERE cod_mov_mae=$movimineto  and cod_tip_mae=3" ;
+	$dbcos1->query($sql);
+}
+
+function reverzar_referencias_traslado ($movimineto) {
+	$dbcos1= new  Database();
+	//BORROA MAESTRO SERIALES
+	$sql = "delete from maestro_serial WHERE cod_mov_ser=$movimineto and tip_mov_ser=5 " ;
+	$dbcos1->query($sql);
+	//BORROA MAESTRO MOVIMIENTOS
+	$sql = "delete from maestro_movimiento WHERE cod_mov_mae=$movimineto and cod_tip_mae=5 " ;
+	$dbcos1->query($sql);
+	//BORROA TRASLADOS
+	$sql = "delete from traslado WHERE cod_tras=$movimineto  " ;
+	$dbcos1->query($sql);
+}
+
+function sumar_referencias ($referencia,$cantidad ) {
+	$dbcos= new  Database();
+	$sql = " SELECT act_ref +".$cantidad." as total FROM referencia WHERE cod_ref=".$referencia;
+
+	$dbcos->query($sql);
+	$dbcos->next_row();
+	$cant_actual=$dbcos->total;
+	
+	$sql = "UPDATE referencia SET act_ref=".$cant_actual." WHERE  cod_ref=".$referencia ;
+	$dbcos->query($sql);	
+
+}
+
+
+function restar_referencias ($referencia,$cantidad ) {
+	$dbcos= new  Database();
+	$sql = " SELECT act_ref -".$cantidad." as total FROM referencia WHERE cod_ref=".$referencia;
+	$dbcos->query($sql);
+	$dbcos->next_row();
+	$cant_actual=$dbcos->total;
+	$sql = "UPDATE referencia SET act_ref=".$cant_actual." WHERE  cod_ref=".$referencia ;
+	$dbcos->query($sql);	
+
+}
+
+
+function combo_movil($nombre_obj,$valor,$nombre,$valor_edicion,$proyecto,$activo) {
+	$db= new  Database();
+	$sql="select * from  moviles ";
+	$db->query($sql);
+	
+	if ($activo=="") { echo " <select name='".$nombre_obj."' class='SELECT'>"; }
+	else { echo " <select name='".$nombre_obj."'  disabled='$activo'  class='SELECT'>"; }
+	
+	echo" <option value=0>Seleccione</option>";
+	while($db->next_row()) {
+		if($valor_edicion==$db->$valor) 
+			echo" <option value=".$db->$valor." selected='selected'>".$db->$nombre."</option>";
+		else
+			 echo" <option value=".$db->$valor.">".$db->$nombre."</option>";
+	}
+	echo "</select>";
+	$db->close();
+}
+
+function combo_tercero($nombre_obj,$tabla,$valor,$nombre,$valor_edicion) {
+$db= new  Database();
+$sql="select cod_ter , concat(nom_ter,concat(' ', ape_ter)) AS nombre  from ".$tabla;
+$db->query($sql);
+echo " <select name='".$nombre_obj."' class='SELECT'>";
+while($db->next_row()) {
+	if($valor_edicion==$db->$valor) 
+		echo" <option value=".$db->$valor." selected='selected'>".$db->nombre."</option>";
+	else
+		 echo" <option value=".$db->$valor.">".$db->$nombre."</option>";
+}
+echo "</select>";
+$db->close();
+}
+
+
+
+function verifica_precios($codigo_ref,$valor_venta,$valor_compra){
+$db= new  Database();
+$sql="UPDATE producto SET pre_ven_pro= $valor_venta , pre_com_pro= $valor_compra WHERE  cod_pro=$codigo_ref";
+$db->query($sql);
+}
+
+
+
+
+
+
+?>
